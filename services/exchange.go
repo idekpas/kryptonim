@@ -2,10 +2,9 @@ package services
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"math"
-	"strconv"
+	"math/big"
 	"strings"
 
 	"github.com/idekpas/kryptonim/config"
@@ -31,49 +30,44 @@ func NewDefaultExchangeService() *DefaultExchangeService {
 		log.Fatalf("Error during mapping crypto rates from config: %v", err)
 	}
 
-	for k, v := range rates {
-		fmt.Println("m1: ", k, " 2: ", v.DecimalPlaces, " 3: ", v.RateToUSD)
-	}
 	return &DefaultExchangeService{cryptoRates: rates}
 }
 
 func (des DefaultExchangeService) Exchange(from string, to string, amountStr string) (map[string]interface{}, error) {
 	fromData, fromExists := des.cryptoRates[strings.ToLower(from)]
 	toData, toExists := des.cryptoRates[strings.ToLower(to)]
-	if !fromExists {
-		log.Println("error exchanging crypto, currency does not exists11", fromData)
+	if !fromExists || !toExists {
+		log.Println("error exchanging crypto, currency does not exists")
 		return nil, errors.New("error exchanging crypto, currency does not exists")
 	}
 
-	if !toExists {
-		log.Println("error exchanging crypto, currency does not exists22")
-		return nil, errors.New("error exchanging crypto, currency does not exists")
-	}
+	fromRateBig := floatToBigInt(fromData.RateToUSD, fromData.DecimalPlaces)
+	toRateBig := floatToBigInt(toData.RateToUSD, toData.DecimalPlaces)
 
-	amount, err := strconv.ParseFloat(amountStr, 64)
-	if err != nil || amount <= 0 {
-		log.Printf("error parsing amount: %v", err)
-		return nil, err
-	}
+	amountBig := new(big.Int)
+	amountBig.SetString(amountStr, 10)
 
-	convertedAmount := convert(amount, fromData.RateToUSD, toData.RateToUSD)
-	roundedAmount := round(toData.DecimalPlaces, convertedAmount)
+	amountInUSD := new(big.Int).Mul(amountBig, fromRateBig)
+	convertedAmount := new(big.Int).Div(amountInUSD, toRateBig)
 
 	return map[string]interface{}{
 		"from":   from,
 		"to":     to,
-		"amount": roundedAmount,
+		"amount": bigIntToFloat64(convertedAmount, toData.DecimalPlaces),
 	}, nil
 }
 
-func round(decimalPlaces int, convertedAmount float64) float64 {
-	precision := math.Pow(10, float64(decimalPlaces))
-	roundedAmount := math.Round(convertedAmount*precision) / precision
-	return roundedAmount
+func floatToBigInt(value float64, decimalPlaces int) *big.Int {
+	multiplier := math.Pow10(decimalPlaces)
+	temp := big.NewFloat(value * multiplier)
+	result := new(big.Int)
+	temp.Int(result)
+	return result
 }
 
-func convert(amount float64, fromRate float64, toRate float64) float64 {
-	amountInUSD := amount * fromRate
-	convertedAmount := amountInUSD / toRate
-	return convertedAmount
+func bigIntToFloat64(value *big.Int, decimalPlaces int) float64 {
+	divisor := math.Pow10(decimalPlaces)
+	temp := new(big.Float).SetInt(value)
+	result, _ := temp.Quo(temp, big.NewFloat(divisor)).Float64()
+	return result
 }

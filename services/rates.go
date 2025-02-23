@@ -30,12 +30,12 @@ func (rs DefaultRatesService) GetExchangeRates(currencies []string) ([]map[strin
 		return nil, errors.New("error fetching rates from response")
 	}
 
-	resp := rs.calculateRates(currencies, rates)
+	resp := calculateRates(currencies, rates)
 
 	return resp, nil
 }
 
-func (rs DefaultRatesService) calculateRates(currencies []string, rates map[string]float64) []map[string]interface{} {
+func calculateRates(currencies []string, rates map[string]float64) []map[string]interface{} {
 	var resp []map[string]interface{}
 	for i, from := range currencies {
 		for j, to := range currencies {
