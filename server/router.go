@@ -10,7 +10,7 @@ func NewRouter() *gin.Engine {
 	router.Use(gin.Logger(), gin.Recovery())
 
 	health := new(controllers.HealthController)
-	rates := new(controllers.RatesController)
+	rates := controllers.NewRatesController()
 
 	router.GET("/status", health.Status)
 	router.GET("/rates", rates.GetRates)

@@ -9,7 +9,15 @@ import (
 	"github.com/idekpas/kryptonim/services"
 )
 
-type RatesController struct{}
+type RatesController struct {
+	RatesService services.RatesService
+}
+
+func NewRatesController() *RatesController {
+	return &RatesController{
+		RatesService: services.NewDefaultRatesService(),
+	}
+}
 
 func (h RatesController) GetRates(c *gin.Context) {
 	currencies := c.Query("currencies")
@@ -19,7 +27,7 @@ func (h RatesController) GetRates(c *gin.Context) {
 		return
 	}
 
-	rates, err := services.GetExchangeRates(currencyList)
+	rates, err := h.RatesService.GetExchangeRates(currencyList)
 	if err != nil {
 		log.Print(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{})

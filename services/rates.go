@@ -11,25 +11,31 @@ import (
 	"resty.dev/v3"
 )
 
-var baseURL = ""
+type RatesService interface {
+	GetExchangeRates([]string) ([]map[string]interface{}, error)
+}
 
-func GetExchangeRates(currencies []string) ([]map[string]interface{}, error) {
-	if baseURL == "" {
-		baseURL = getBaseURL()
-	}
+type DefaultRatesService struct {
+	baseURL string
+}
 
-	rates, err := getRates(strings.Join(currencies, ","))
+func NewDefaultRatesService() *DefaultRatesService {
+	return &DefaultRatesService{baseURL: getBaseURL()}
+}
+
+func (rs DefaultRatesService) GetExchangeRates(currencies []string) ([]map[string]interface{}, error) {
+	rates, err := rs.getRates(strings.Join(currencies, ","))
 	if err != nil || len(rates) < 2 {
 		log.Println("error fetching rates from response: ", err)
 		return nil, errors.New("error fetching rates from response")
 	}
 
-	resp := calculateRates(currencies, rates)
+	resp := rs.calculateRates(currencies, rates)
 
 	return resp, nil
 }
 
-func calculateRates(currencies []string, rates map[string]float64) []map[string]interface{} {
+func (rs DefaultRatesService) calculateRates(currencies []string, rates map[string]float64) []map[string]interface{} {
 	var resp []map[string]interface{}
 	for i, from := range currencies {
 		for j, to := range currencies {
@@ -45,7 +51,7 @@ func calculateRates(currencies []string, rates map[string]float64) []map[string]
 	return resp
 }
 
-func getRates(currencies string) (rates map[string]float64, err error) {
+func (rs DefaultRatesService) getRates(currencies string) (rates map[string]float64, err error) {
 	client := resty.New()
 	defer client.Close()
 
@@ -53,7 +59,7 @@ func getRates(currencies string) (rates map[string]float64, err error) {
 		SetQueryParam("base", "USD").
 		SetQueryParam("symbols", currencies).
 		SetResult(&openexchangerates.Response{}).
-		Get(baseURL)
+		Get(rs.baseURL)
 	if err != nil || resp.StatusCode() != 200 {
 		log.Println("error during call to openexchangerates API: ", err)
 		return nil, errors.New("error during call to openexchangerates API")
