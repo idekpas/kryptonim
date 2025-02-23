@@ -1,5 +1,5 @@
 {
-  "test": {
-    "var": "test"
+  "server": {
+    "port": ":8081"
   }
 }
