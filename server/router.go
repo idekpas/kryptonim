@@ -11,9 +11,11 @@ func NewRouter() *gin.Engine {
 
 	health := new(controllers.HealthController)
 	rates := controllers.NewRatesController()
+	exchange := controllers.NewExchangeController()
 
 	router.GET("/status", health.Status)
 	router.GET("/rates", rates.GetRates)
+	router.GET("/exchange", exchange.GetExchange)
 
 	return router
 }

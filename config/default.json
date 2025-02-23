@@ -1,5 +1,12 @@
 {
   "server": {
     "port": ":8081"
+  },
+  "cryptoRates": {
+    "BEER": { "decimalPlaces": 18, "rateToUSD": 0.00002461 },
+    "FLOKI": { "decimalPlaces": 18, "rateToUSD": 0.0001428 },
+    "GATE": { "decimalPlaces": 18, "rateToUSD": 6.87 },
+    "USDT": { "decimalPlaces": 6, "rateToUSD": 0.999 },
+    "WBTC": { "decimalPlaces": 8, "rateToUSD": 57037.22 }
   }
 }
