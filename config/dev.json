@@ -1,5 +1,9 @@
 {
   "server": {
     "port": ":8081"
+  },
+  "api": {
+    "url": "https://openexchangerates.org/api/latest.json",
+    "key": "API_KEY"
   }
 }

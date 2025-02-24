@@ -2,13 +2,10 @@ package services
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"strings"
 
-	"github.com/idekpas/kryptonim/api/openexchangerates"
-	"github.com/idekpas/kryptonim/config"
-	"resty.dev/v3"
+	"github.com/idekpas/kryptonim/repository"
 )
 
 type RatesService interface {
@@ -16,15 +13,15 @@ type RatesService interface {
 }
 
 type DefaultRatesService struct {
-	baseURL string
+	rep repository.ExchangeRepository
 }
 
 func NewDefaultRatesService() *DefaultRatesService {
-	return &DefaultRatesService{baseURL: getBaseURL()}
+	return &DefaultRatesService{rep: repository.NewOpenExchangeRepository()}
 }
 
 func (rs DefaultRatesService) GetExchangeRates(currencies []string) ([]map[string]interface{}, error) {
-	rates, err := rs.getRates(strings.Join(currencies, ","))
+	rates, err := rs.rep.GetRates(strings.Join(currencies, ","))
 	if err != nil || len(rates) < 2 {
 		log.Println("error fetching rates from response: ", err)
 		return nil, errors.New("error fetching rates from response")
@@ -49,30 +46,4 @@ func calculateRates(currencies []string, rates map[string]float64) []map[string]
 		}
 	}
 	return resp
-}
-
-func (rs DefaultRatesService) getRates(currencies string) (rates map[string]float64, err error) {
-	client := resty.New()
-	defer client.Close()
-
-	resp, err := client.R().
-		SetQueryParam("base", "USD").
-		SetQueryParam("symbols", currencies).
-		SetResult(&openexchangerates.Response{}).
-		Get(rs.baseURL)
-	if err != nil || resp.StatusCode() != 200 {
-		log.Println("error during call to openexchangerates API: ", err)
-		return nil, errors.New("error during call to openexchangerates API")
-	}
-
-	rates = resp.Result().(*openexchangerates.Response).Rates
-	return rates, nil
-}
-
-func getBaseURL() string {
-	cfg := config.GetConfig()
-	url := cfg.GetString("api.url")
-	key := cfg.GetString("api.key")
-
-	return fmt.Sprintf("%s?app_id=%s", url, key)
 }
