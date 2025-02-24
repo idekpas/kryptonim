@@ -1,0 +1,9 @@
+{
+  "server": {
+    "port": ":8081"
+  },
+  "api": {
+    "url": "https://test.test",
+    "key": "123"
+  }
+}
